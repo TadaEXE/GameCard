@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmake -S . -B ./build -G Ninja \
+  -DARDUINO_FQBN="STMicroelectronics:stm32:Nucleo_64" \
+  -DARDUINO_BOARD_OPTS="pnum=NUCLEO_L053R8" \
+  -DUPLOAD_TOOL="openocd"
+
