@@ -1,84 +1,80 @@
-cmake_minimum_required(VERSION 3.20)
-project(GameCard LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.22)
 
-set(TARGET_NAME "nucleo_l053r8" CACHE STRING "Name of the target board")
-set(TARGET_SRC_DIR "${CMAKE_SOURCE_DIR}/target_${TARGET_NAME}")
-set(TARGET_BUILD_DIR "${CMAKE_BINARY_DIR}/${TARGET_NAME}")
+# Setup cmake module path and compiler settings
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+message("Build type: "              ${CMAKE_BUILD_TYPE})
+set(CMAKE_C_STANDARD                11)
+set(CMAKE_C_STANDARD_REQUIRED       ON)
+set(CMAKE_C_EXTENSIONS              ON)
+set(CMAKE_CXX_STANDARD              17)
+set(CMAKE_CXX_STANDARD_REQUIRED     ON)
+set(CMAKE_CXX_EXTENSIONS            ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS	ON)
+set(PROJ_PATH                       ${CMAKE_CURRENT_SOURCE_DIR})
+set(CMAKE_TOOLCHAIN_FILE			gcc-arm-none-eabi)
 
-set(UPLOAD_TOOL "openocd" CACHE STRING "Upload tool (openocd|st-flash)")
+# Project Name    --- MUST EDIT ---
+project(CMake-Template)
+enable_language(C CXX ASM)
 
-set(ARDUINO_CLI "arduino-cli" CACHE STRING "arduino-cli executable")
-set(ARDUINO_FQBN "STMicroelectronics:stm32:Nucleo_64" CACHE STRING "FQBN of the board")
-set(ARDUINO_BOARD_OPTS "pnum=NUCLEO_L053R8" CACHE STRING "Board options")
-set(ARDUINO_CFG_DIR "${TARGET_SRC_DIR}/.config")
-set(ARDUINO_BUILD_PATH "${TARGET_BUILD_DIR}")
-set(ARDUINO_OUTPUT_DIR "${TARGET_BUILD_DIR}")
+# Linker File     --- MUST EDIT ---
+set(linker_script_SRC               ${PROJ_PATH}/Core/STM32L432KCUX_FLASH.ld)
+set(EXECUTABLE                      ${CMAKE_PROJECT_NAME})
 
-set(SRC_DIR "${CMAKE_SOURCE_DIR}/src")
+# MCU Parameters - I am storing all created profiles. Pick one to use.
+# include(STM32G431xx_HAL_PARA)
+include(STM32L432xx_HAL_PARA)
 
-# Join include flags into a single string
-set(PROJECT_INCLUDE_FLAGS
-  -I${SRC_DIR}
-  -I${SRC_DIR}/graphics
-)
-string (JOIN " " PROJECT_INCLUDE_FLAGS_JOINED ${PROJECT_INCLUDE_FLAGS})
+# USE .\getIncludeList.sh and .\getSourceList.sh to generate file list
+# Include List, Source List, and MCU Sepecific Setting
+# Must Update these files in cmake/ when adding new source files
+include(SourceList)
+include(IncludeList)
 
-# 1) Setup step -> produce a stamp file
-add_custom_command(
-  OUTPUT "${ARDUINO_CFG_DIR}/.inited"
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${ARDUINO_CFG_DIR}"
-  COMMAND ${CMAKE_COMMAND} -E env PYTHONUNBUFFERED=1
-          python "${CMAKE_SOURCE_DIR}/setup_target_dir.py"
-  COMMAND ${CMAKE_COMMAND} -E touch "${ARDUINO_CFG_DIR}/.inited"
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  COMMENT "Setting up target folder and deps"
-  VERBATIM
-)
+# Executable files
+add_executable(${EXECUTABLE} ${source_list})
 
-# 2) Compile step -> produce a stamp file
-add_custom_command(
-  OUTPUT "${ARDUINO_BUILD_PATH}/.built"
-  DEPENDS "${ARDUINO_CFG_DIR}/.inited"
-  COMMAND ${CMAKE_COMMAND} -E make_directory "${ARDUINO_BUILD_PATH}"
-  COMMAND ${ARDUINO_CLI}
-          compile
-          --config-dir "${ARDUINO_CFG_DIR}"
-          --fqbn "${ARDUINO_FQBN}:${ARDUINO_BOARD_OPTS}"
-          --build-path "${ARDUINO_BUILD_PATH}"
-          --output-dir "${ARDUINO_OUTPUT_DIR}"
-          --build-property "compiler.cpp.extra_flags=${PROJECT_INCLUDE_FLAGS_JOINED}"
-          "${TARGET_SRC_DIR}"
-  COMMAND ${CMAKE_COMMAND} -E touch "${ARDUINO_BUILD_PATH}/.built"
-  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-  COMMENT "Compiling firmware with arduino-cli"
-  VERBATIM
-  COMMAND_EXPAND_LISTS
+# Include paths
+target_include_directories(${EXECUTABLE} PRIVATE ${include_list})
+
+# Project symbols
+target_compile_definitions(${EXECUTABLE} PRIVATE ${compiler_define})
+
+# Compiler options
+target_compile_options(${EXECUTABLE} PRIVATE
+	${CPU_PARAMETERS}
+	-Wall
+	-Wpedantic
+	-Wno-unused-parameter
 )
 
-# 3) Phony build target that depends on the compile stamp
-add_custom_target(build-fw ALL
-  DEPENDS "${ARDUINO_BUILD_PATH}/.built"
+# Linker options
+target_link_options(${EXECUTABLE} PRIVATE
+	-T${linker_script_SRC}
+	${CPU_PARAMETERS}
+	-Wl,-Map=${CMAKE_PROJECT_NAME}.map
+	--specs=nosys.specs
+	#-u _printf_float                # STDIO float formatting support
+	-Wl,--start-group
+	-lc
+	-lm
+	-lstdc++
+	-lsupc++
+	-Wl,--end-group
+	-Wl,--print-memory-usage
 )
 
-# 4) Flash using openocd or st-link
-if(UPLOAD_TOOL STREQUAL "openocd")
-  add_custom_target(flash
-    DEPENDS "${ARDUINO_BUILD_PATH}/.built"
-    COMMAND /bin/bash -c "set -euo pipefail; ELF=\$(ls '${ARDUINO_OUTPUT_DIR}'/*.elf | head -n1); \
-      echo '[FLASH] Using ELF:' \"\$ELF\"; \
-      openocd -f interface/stlink.cfg -f target/stm32l0.cfg -c \"program \$ELF verify reset exit\""
-    COMMENT "Flashing via OpenOCD (program + verify + reset)"
-    VERBATIM
-  )
-elseif(UPLOAD_TOOL STREQUAL "st-flash")
-  add_custom_target(flash
-    DEPENDS "${ARDUINO_BUILD_PATH}/.built"
-    COMMAND /bin/bash -c "set -euo pipefail; HEX=\$(ls '${ARDUINO_OUTPUT_DIR}'/*.hex | head -n1); \
-      echo '[FLASH] Using HEX:' \"\$HEX\"; \
-      st-flash --format ihex write \"\$HEX\" && st-flash reset"
-    COMMENT "Flashing via st-flash (write + reset)"
-    VERBATIM
-  )
-else()
-  message(FATAL_ERROR "Unsupported UPLOAD_TOOL='${UPLOAD_TOOL}'. Use 'openocd' or 'st-flash'.")
-endif()
+# Execute post-build to print size
+add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
+	COMMAND ${CMAKE_SIZE} $<TARGET_FILE:${EXECUTABLE}>
+)
+
+# Convert output to hex and binary
+add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
+	COMMAND ${CMAKE_OBJCOPY} -O ihex $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.hex
+)
+
+# Convert to bin file -> add conditional check?
+add_custom_command(TARGET ${EXECUTABLE} POST_BUILD
+	COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:${EXECUTABLE}> ${EXECUTABLE}.bin
+)

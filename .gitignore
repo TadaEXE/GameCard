@@ -1,3 +1,6 @@
 compile_commands.json
-build/*
-.config
+build/
+CubeMX/*
+!CubeMX/*.ioc
+docs/*
+docs/
