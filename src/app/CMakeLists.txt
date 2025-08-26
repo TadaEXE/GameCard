@@ -1,0 +1,11 @@
+# set(APP_INCLUDES
+#   ${CMAKE_CURRENT_LIST_DIR}/
+# )
+
+set(APP_SOURCES
+  ${APP_SOURCES}
+  ${CMAKE_CURRENT_LIST_DIR}/app.cpp
+
+  PARENT_SCOPE
+)
+

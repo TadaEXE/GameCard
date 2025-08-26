@@ -3,39 +3,37 @@ cmake_minimum_required(VERSION 3.22)
 # Setup cmake module path and compiler settings
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 message("Build type: "              ${CMAKE_BUILD_TYPE})
-set(CMAKE_C_STANDARD                11)
+
+set(CMAKE_C_STANDARD                17)
 set(CMAKE_C_STANDARD_REQUIRED       ON)
 set(CMAKE_C_EXTENSIONS              ON)
 set(CMAKE_CXX_STANDARD              17)
 set(CMAKE_CXX_STANDARD_REQUIRED     ON)
 set(CMAKE_CXX_EXTENSIONS            ON)
-set(CMAKE_EXPORT_COMPILE_COMMANDS	ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS	  ON)
 set(PROJ_PATH                       ${CMAKE_CURRENT_SOURCE_DIR})
-set(CMAKE_TOOLCHAIN_FILE			gcc-arm-none-eabi)
+set(CMAKE_TOOLCHAIN_FILE			      gcc-arm-none-eabi)
+set(TARGET_NAME                     target_nucleo_l053r8)
 
-# Project Name    --- MUST EDIT ---
-project(CMake-Template)
+
+project(GameCard)
 enable_language(C CXX ASM)
 
-# Linker File     --- MUST EDIT ---
-set(linker_script_SRC               ${PROJ_PATH}/Core/STM32L432KCUX_FLASH.ld)
-set(EXECUTABLE                      ${CMAKE_PROJECT_NAME})
+set(target_dir ${CMAKE_CURRENT_LIST_DIR}/${TARGET_NAME})
+message("Using target at: ${target_dir}")
+add_subdirectory(${target_dir})
 
-# MCU Parameters - I am storing all created profiles. Pick one to use.
-# include(STM32G431xx_HAL_PARA)
-include(STM32L432xx_HAL_PARA)
+set(src_dir ${CMAKE_CURRENT_LIST_DIR}/src)
+add_subdirectory(${src_dir})
 
-# USE .\getIncludeList.sh and .\getSourceList.sh to generate file list
-# Include List, Source List, and MCU Sepecific Setting
-# Must Update these files in cmake/ when adding new source files
-include(SourceList)
-include(IncludeList)
+set(EXECUTABLE ${CMAKE_PROJECT_NAME})
 
-# Executable files
-add_executable(${EXECUTABLE} ${source_list})
+include(STM32L053xx_HAL_PARA)
+
+add_executable(${EXECUTABLE} ${TARGET_SOURCES} ${SRC_SOURCES})
 
 # Include paths
-target_include_directories(${EXECUTABLE} PRIVATE ${include_list})
+target_include_directories(${EXECUTABLE} PRIVATE ${TARGET_INCLUDES} ${SRC_INCLUDES})
 
 # Project symbols
 target_compile_definitions(${EXECUTABLE} PRIVATE ${compiler_define})
@@ -50,7 +48,7 @@ target_compile_options(${EXECUTABLE} PRIVATE
 
 # Linker options
 target_link_options(${EXECUTABLE} PRIVATE
-	-T${linker_script_SRC}
+	-T${linker_script}
 	${CPU_PARAMETERS}
 	-Wl,-Map=${CMAKE_PROJECT_NAME}.map
 	--specs=nosys.specs
