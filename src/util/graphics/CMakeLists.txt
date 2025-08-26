@@ -1,5 +1,4 @@
 set(UTIL_SOURCES
-  ${UTIL_SOURCES}
   ${CMAKE_CURRENT_LIST_DIR}/sprite.cpp
   CACHE INTERNAL ""
 )

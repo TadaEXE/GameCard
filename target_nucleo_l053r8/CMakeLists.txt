@@ -1,5 +1,4 @@
 set(TARGET_INCLUDES
-  ${TARGET_INCLUDES}
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Inc
   ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Device/ST/STM32L0xx/Include
   ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/CMSIS/Include
@@ -9,7 +8,11 @@ set(TARGET_INCLUDES
 )
 
 set(TARGET_SOURCES
-  ${TARGET_SOURCES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/TargetExport.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hal_impl/led.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hal_impl/delay.cpp
+
+
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/main.c
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/syscalls.c
   ${CMAKE_CURRENT_SOURCE_DIR}/Core/Src/system_stm32l0xx.c
@@ -31,6 +34,7 @@ set(TARGET_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_pwr_ex.c
   ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_i2c.c
   ${CMAKE_CURRENT_SOURCE_DIR}/Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_spi.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/toolchain/startup_stm32l053xx.s
   CACHE INTERNAL ""
 )
 

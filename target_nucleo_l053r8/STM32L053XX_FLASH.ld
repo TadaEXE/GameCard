@@ -50,7 +50,7 @@
 */
 
 /* Entry Point */
-/* ENTRY(Reset_Handler) */
+ENTRY(Reset_Handler)
 
 /* Specify the memory areas */
 MEMORY

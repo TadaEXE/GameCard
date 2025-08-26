@@ -3,9 +3,7 @@
 # )
 
 set(APP_SOURCES
-  ${APP_SOURCES}
-  ${CMAKE_CURRENT_LIST_DIR}/app.cpp
-
-  PARENT_SCOPE
+  "${CMAKE_CURRENT_LIST_DIR}/app.cpp"
+  CACHE INTERNAL ""
 )
 
