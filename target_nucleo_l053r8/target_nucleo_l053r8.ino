@@ -1,5 +1,5 @@
 #include <SPI.h>
-#include <Adafruit_GFX.h>
+// #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
 #include <start.hpp>
 
@@ -72,7 +72,7 @@ void setup()   {
   delay(2000);
   display.clearDisplay();
 
-  testdrawchar();      // Draw characters of the default font
+  // testdrawchar();      // Draw characters of the default font
   testdrawbitmap();    // Draw a small bitmap image
 
   testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
