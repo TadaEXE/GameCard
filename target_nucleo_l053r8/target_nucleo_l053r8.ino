@@ -1,7 +1,6 @@
 #include <SPI.h>
 // #include <Adafruit_GFX.h>
 #include <Adafruit_SH110X.h>
-#include <start.hpp>
 
 #define OLED_MOSI     11
 #define OLED_CLK      13
@@ -76,8 +75,6 @@ void setup()   {
   testdrawbitmap();    // Draw a small bitmap image
 
   testanimate(logo_bmp, LOGO_WIDTH, LOGO_HEIGHT); // Animate bitmaps
-
-  start();
 }
 
 void loop() {
