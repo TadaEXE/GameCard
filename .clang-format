@@ -2,3 +2,4 @@
 BasedOnStyle: Google
 PointerAlignment: Left
 IndentWidth: 2
+ColumnLimit: 120
